@@ -2,7 +2,7 @@ use crate::InternalError;
 
 use arrayref::array_ref;
 use failure::Error;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 /// [`SecretKey`](struct.SecretKey.html) length in bytes.
 pub const SECRET_KEY_LENGTH: usize = 64;
@@ -16,7 +16,7 @@ pub struct SecretKey {
 impl From<[u8; SECRET_KEY_LENGTH]> for SecretKey {
     fn from(bytes: [u8; SECRET_KEY_LENGTH]) -> Self {
         Self {
-            ed: ed25519_dalek::SecretKey::from_bytes(&bytes[32..]).unwrap(),
+            ed: bytes[32..].try_into().expect("slice with incorrect length"),
             dh: x25519_dalek::StaticSecret::from(array_ref!(bytes, 0, 32).clone()),
         }
     }
@@ -30,7 +30,7 @@ impl TryFrom<&[u8]> for SecretKey {
             Err(InternalError::BytesLengthError.into())
         } else {
             Ok(Self {
-                ed: ed25519_dalek::SecretKey::from_bytes(&bytes[32..])?,
+                ed: bytes[32..].try_into()?,
                 dh: x25519_dalek::StaticSecret::from(*array_ref!(bytes, 0, 32)),
             })
         }

@@ -1,4 +1,4 @@
-use crate::{InternalError, PublicKey, PUBLIC_KEY_LENGTH};
+use crate::{InternalError, VerifyingKey, PUBLIC_KEY_LENGTH};
 
 use arrayref::{array_mut_ref, array_ref};
 use failure::Error;
@@ -18,7 +18,7 @@ const BLOCK_SIZE: usize = 64;
 const MEMORY_SIZE: usize = 1 << 21; // 2 MB
 const U64_SIZE: usize = mem::size_of::<u64>();
 
-/// 40-bit node ID derived from [`PublicKey`](struct.PublicKey.html).
+/// 40-bit node ID derived from [`VerifyingKey`](struct.VerifyingKey.html).
 ///
 /// Address is derived by taking last five bytes of memory-hard hash.
 /// Address is valid unless:
@@ -39,7 +39,7 @@ impl Serialize for Address {
 }
 
 /// Ad-hoc memory-hard hash function used to derive address from ZeroTier public key.
-fn memory_hard_hash(public_key: &PublicKey) -> Result<[u8; BLOCK_SIZE], Error> {
+fn memory_hard_hash(public_key: &VerifyingKey) -> Result<[u8; BLOCK_SIZE], Error> {
     let mut buf = [0u8; BLOCK_SIZE];
     let mut mem = [0u8; MEMORY_SIZE];
 
@@ -82,12 +82,12 @@ fn memory_hard_hash(public_key: &PublicKey) -> Result<[u8; BLOCK_SIZE], Error> {
     }
 }
 
-/// Tries to derive address from [`PublicKey`](struct.PublicKey.html). Throws
+/// Tries to derive address from [`VerifyingKey`](struct.VerifyingKey.html). Throws
 /// [`InternalError`](enum.InternalError.html) for invalid addresses.
-impl TryFrom<&PublicKey> for Address {
+impl TryFrom<&VerifyingKey> for Address {
     type Error = Error;
 
-    fn try_from(public_key: &PublicKey) -> Result<Self, Error> {
+    fn try_from(public_key: &VerifyingKey) -> Result<Self, Error> {
         let hash = memory_hard_hash(public_key)?;
         let addr = array_ref!(hash, BLOCK_SIZE - ADDRESS_LENGTH, ADDRESS_LENGTH).clone();
 
